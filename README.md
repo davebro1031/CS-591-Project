@@ -1,6 +1,9 @@
 # Chicken Game Project
 
-This folder contains `chicken.ipynb`, a notebook that solves a two-player game of chicken, computes state values with Gambit (`pygambit`), and plots the value function: a static Matplotlib 3D scatter, an interactive Plotly 3D landscape, and a Plotly heatmap with a distance slider.
+This repository contains two things:
+
+- `chicken.ipynb`, a notebook that solves a two-player game of chicken, computes state values with Gambit (`pygambit`), and plots the value function: a static Matplotlib 3D scatter, an interactive Plotly 3D landscape, and a Plotly heatmap with a distance slider.
+- `make_report_figures.py`, a script that runs the notebook's model and solver and regenerates the figures and numbers of the final report. It writes the figures to a `plots/` folder (see [section 4](#4-regenerate-the-report-figures-and-numbers)).
 
 ## Requirements
 
@@ -12,10 +15,11 @@ This folder contains `chicken.ipynb`, a notebook that solves a two-player game o
 
 ## 1. Create a virtual environment
 
-From this `Project` directory:
+Clone the repository and create the environment inside it:
 
 ```bash
-cd Project
+git clone https://github.com/davebro1031/CS-591-Project.git
+cd CS-591-Project
 python3.12 -m venv .venv
 ```
 
@@ -66,18 +70,18 @@ python -m pip install jupyterlab
 jupyter lab chicken.ipynb
 ```
 
-In the notebook toolbar, open the kernel picker and choose **Python (chicken)** (or the interpreter whose path is `Project/.venv`).
+In the notebook toolbar, open the kernel picker and choose **Python (chicken)** (or the interpreter whose path is this folder's `.venv`).
 
 Install and launch JupyterLab from this `.venv`, with the environment activated. Plotly ships its JupyterLab renderer (`jupyterlab-plotly`) inside the environment where Plotly is installed. If you start a JupyterLab that lives in a different environment and only point the kernel at `.venv`, the two Plotly figures may come up blank. The solver and the Matplotlib plot still work in that case.
 
 ### VS Code
 
 1. Install the **Python** and **Jupyter** extensions.
-2. Open this repository (or the `Project` folder) in VS Code.
+2. Open this repository folder in VS Code.
 3. Open `chicken.ipynb`.
 4. Click **Select Kernel** in the top right.
-5. Choose **Python Environments**, then `Project/.venv` (Python 3.12).
-   - If it does not appear: Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) → **Python: Select Interpreter** → **Enter interpreter path…** → select `Project/.venv/bin/python` (macOS/Linux) or `Project/.venv\Scripts\python.exe` (Windows).
+5. Choose **Python Environments**, then `.venv` (Python 3.12).
+   - If it does not appear: Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) → **Python: Select Interpreter** → **Enter interpreter path…** → select `.venv/bin/python` (macOS/Linux) or `.venv\Scripts\python.exe` (Windows).
 6. Run All, or run cells in order.
 
 ### Cursor
@@ -87,13 +91,37 @@ Cursor uses the same kernel flow as VS Code.
 1. Open the folder in Cursor.
 2. Open `chicken.ipynb`.
 3. Click **Select Kernel** (or Command Palette → **Notebook: Select Notebook Kernel**).
-4. Pick **Python Environments** (not a Jupyter kernelspec name). Select `Project/.venv`.
+4. Pick **Python Environments** (not a Jupyter kernelspec name). Select `.venv`.
 5. If the list is empty, use **Python: Select Interpreter** and paste the full path to `.venv/bin/python`.
 6. Run cells from the top.
 
 The kernel name in the UI is usually **`.venv (Python 3.12.x)`**, not the word “chicken”. That is the correct environment.
 
-## 4. What the notebook does
+## 4. Regenerate the report figures and numbers
+
+`make_report_figures.py` executes the notebook's model and solver cells unchanged (every code cell above the "Visualizations" heading) and then computes the results quoted in the final report. It does not need Jupyter or a registered kernel, only the environment from steps 1 and 2.
+
+With the environment activated, from this folder:
+
+```bash
+python make_report_figures.py             # figures and numbers
+python make_report_figures.py --variants  # also re-solve two payoff variants
+```
+
+It takes a few seconds. The figures go to a `plots/` folder next to the script, which is created if it does not exist:
+
+| File | Content |
+| --- | --- |
+| `plots/value_maps.pdf` | Equilibrium values of both players for every speed pair, at last-decision states and at the initial distance `d = 9` |
+| `plots/policy_maps.pdf` | Probability that each player swerves, and probability of a crash, for every speed pair |
+
+Use `--outdir some/folder` to write the figures somewhere else.
+
+The script prints the numbers used in the report: state counts, the range of values and swerve probabilities, the probability of each outcome under the equilibrium policies, a closed-form check of the mixed equilibrium, and the reachability results (possible win, sure win, sure crash avoidance).
+
+With `--variants`, the last two lines end in `error: TypeError: ...`. That is the expected result, not a failure of the script: it reports that the notebook's solver stops at a degenerate state when the crash penalty is linear or the action reward is removed.
+
+## 5. What the notebook does
 
 A state is `(d, v+, v-)`: remaining distance and the two speeds. Color in every plot is player `+`'s continuation value \(V_+\).
 
@@ -124,7 +152,7 @@ Hover a point for both players' values, mixed strategies (`swerve` / `do nothing
 
 Markdown cells above each figure in the notebook repeat this legend.
 
-## 5. Findings and suggested next steps
+## 6. Findings and suggested next steps
 
 ### Can either player force a win?
 
@@ -142,19 +170,19 @@ What each player can guarantee is safety. Swerving immediately gives `+` at leas
 
 The game is also short. With `d ≤ 9` and `v_min = 3`, every play ends within two joint moves, and only 10 of the 144 states have a second decision.
 
-This check was run as a separate script. It is not a notebook cell yet.
+`make_report_figures.py` reproduces this check (see section 4). It is not a notebook cell.
 
 ### Analyses worth adding
 
-1. **Outcome probabilities under equilibrium.** Push the mixed strategies in `strats` through `kernel` to get P(crash), P(`+` wins), P(`−` wins) and P(both swerve) from each start state. This is the quantitative version of the reachability question. It would replace the modal-action trajectory, which discards the probabilities.
+1. **Outcome probabilities under equilibrium, in the notebook.** `make_report_figures.py` already pushes the mixed strategies through `kernel` to get P(crash), P(`+` wins), P(`−` wins) and P(both swerve) from each start state. A notebook cell could show the same numbers in place of the modal-action trajectory, which discards the probabilities.
 2. **Security level versus equilibrium value.** For each state, compare what a player can guarantee with what equilibrium play gives them.
 3. **Payoff sensitivity.** Sweep the crash penalty and the swerve payoffs to find where P(crash) goes to 0, or where one player always swerves.
-4. **A reachability cell in the notebook.** Record the "no forced win" result above so it is reproducible.
 
-### Model changes that would make winning regions non-empty
+### Model changes that would make the analysis richer
 
-- **Braking to a stop** (`v_min = 0`). "Avoid a crash without swerving" becomes a real safety game.
-- **More rounds.** A longer starting distance or lower speeds.
+Changing the speeds or the distance does not make a win forcible against an adversarial opponent. The argument above only needs the opponent to be able to decline to swerve.
+
+- **Braking to a stop** (`v_min = 0`) and **more rounds** (a longer starting distance or lower speeds). Plays get many decisions, so the timing of a swerve matters, and "from which states can both cars still stop in time" becomes a region worth computing.
 - **Commitment or turn-based moves.** A player who commits first can force a *rational* opponent to swerve. That is winning against a payoff-maximizing opponent, not an adversarial one, so any write-up should say which notion it uses.
 
 ### Solver issues to fix first
@@ -195,7 +223,7 @@ python -m pip install pygambit
 ```
 
 **Kernel picker does not show `.venv`**  
-Use **Python: Select Interpreter** → **Enter interpreter path…** and choose `Project/.venv/bin/python`. Reload the window if needed.
+Use **Python: Select Interpreter** → **Enter interpreter path…** and choose `.venv/bin/python` in this folder. Reload the window if needed.
 
 **Plots are empty or `KeyError` on `values[1]` / `strats_nice`**  
 Run `solve_game()`, then the `strats_nice` cell, then the visualization cells in order. Do not skip earlier cells after a kernel restart.
@@ -205,8 +233,9 @@ Re-run the Plotly 3D cell after `strats_nice` exists. The dropdown restyles the 
 
 ## Recreate the environment from scratch
 
+From this folder:
+
 ```bash
-cd Project
 rm -rf .venv
 python3.12 -m venv .venv
 source .venv/bin/activate
